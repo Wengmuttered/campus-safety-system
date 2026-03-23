@@ -8,19 +8,20 @@
 
 ## 🌟 核心功能
 
-| 模块 | 功能说明 | 技术亮点 |
-|------|---------|---------|
+| 模块          | 功能说明                            | 技术亮点              |
+| ------------- | ----------------------------------- | --------------------- |
 | 🗺️ 校园3D地图 | 三维校园可视化，建筑物/安全点位标注 | Vue-Cesium + CesiumJS |
-| 🆘 一键求助 | SOS紧急报警，实时推送安保人员 | WebSocket (STOMP) |
-| 🚨 事件管理 | 安全事件上报、跟踪和处置 | 状态机流转 |
-| 🏃 疏散导航 | 应急疏散路线展示与导航 | 路径算法 |
-| 📢 灾害预警 | 灾害/安全预警实时推送 | WebSocket 广播 |
-| 🎯 应急演练 | 消防/地震等场景模拟演练 | 场景化管理 |
-| 🔥 AI风险分析 | 历史事件分析、风险热力图预测 | Python + 机器学习 |
+| 🆘 一键求助   | SOS紧急报警，实时推送安保人员       | WebSocket (STOMP)     |
+| 🚨 事件管理   | 安全事件上报、跟踪和处置            | 状态机流转            |
+| 🏃 疏散导航   | 应急疏散路线展示与导航              | 路径算法              |
+| 📢 灾害预警   | 灾害/安全预警实时推送               | WebSocket 广播        |
+| 🎯 应急演练   | 消防/地震等场景模拟演练             | 场景化管理            |
+| 🔥 AI风险分析 | 历史事件分析、风险热力图预测        | Python + 机器学习     |
 
 ## 🛠️ 技术栈
 
 ### 后端
+
 - **Spring Boot 3.2** — Java 21
 - **Spring Security** — JWT 无状态认证
 - **Spring Data JPA** — 数据持久化
@@ -30,6 +31,7 @@
 - **Knife4j 4.5** — API 接口文档
 
 ### 前端
+
 - **Vue 3** — TypeScript + Composition API
 - **Vite** — 构建工具
 - **Vue-Cesium** — 3D 地球/地图引擎
@@ -38,6 +40,7 @@
 - **Axios** — HTTP 请求
 
 ### AI 服务
+
 - **Python** — FastAPI
 - **Scikit-learn / PyTorch** — 风险预测模型
 - **Pandas / NumPy** — 数据分析
@@ -80,6 +83,7 @@
 ## 🚀 快速启动
 
 ### 环境要求
+
 - JDK 21+
 - Maven 3.9+
 - Node.js 20+
@@ -100,6 +104,7 @@ mvn spring-boot:run
 ```
 
 启动后：
+
 - 后端服务：http://localhost:8088
 - API 文档：http://localhost:8088/doc.html
 
@@ -116,11 +121,11 @@ npm run dev
 
 ### 3. 演示账号
 
-| 角色 | 用户名 | 密码 |
-|------|--------|------|
-| 管理员 | admin | admin123 |
-| 安保人员 | security01 | 123456 |
-| 学生 | student01 | 123456 |
+| 角色     | 用户名     | 密码     |
+| -------- | ---------- | -------- |
+| 管理员   | admin      | admin123 |
+| 安保人员 | security01 | 123456   |
+| 学生     | student01  | 123456   |
 
 ## 📊 数据库设计
 
@@ -137,18 +142,18 @@ npm run dev
 
 ## 📡 API 接口
 
-| 模块 | 端点 | 方法 | 说明 |
-|------|------|------|------|
-| 认证 | `/api/auth/login` | POST | 用户登录 |
-| 认证 | `/api/auth/register` | POST | 用户注册 |
-| 地图 | `/api/map/campuses` | GET | 获取校区列表 |
-| 地图 | `/api/map/buildings` | GET | 获取建筑物列表 |
-| 点位 | `/api/safety-points` | CRUD | 安全点位管理 |
-| 报警 | `/api/alerts/sos` | POST | 一键求助 |
-| 事件 | `/api/events` | CRUD | 事件管理 |
-| 疏散 | `/api/evacuation/routes` | GET | 疏散路线 |
-| 演练 | `/api/drills` | CRUD | 演练管理 |
-| 仪表盘 | `/api/dashboard/stats` | GET | 统计数据 |
+| 模块   | 端点                     | 方法 | 说明           |
+| ------ | ------------------------ | ---- | -------------- |
+| 认证   | `/api/auth/login`        | POST | 用户登录       |
+| 认证   | `/api/auth/register`     | POST | 用户注册       |
+| 地图   | `/api/map/campuses`      | GET  | 获取校区列表   |
+| 地图   | `/api/map/buildings`     | GET  | 获取建筑物列表 |
+| 点位   | `/api/safety-points`     | CRUD | 安全点位管理   |
+| 报警   | `/api/alerts/sos`        | POST | 一键求助       |
+| 事件   | `/api/events`            | CRUD | 事件管理       |
+| 疏散   | `/api/evacuation/routes` | GET  | 疏散路线       |
+| 演练   | `/api/drills`            | CRUD | 演练管理       |
+| 仪表盘 | `/api/dashboard/stats`   | GET  | 统计数据       |
 
 > 完整 API 文档请启动后端后访问 http://localhost:8088/doc.html
 
