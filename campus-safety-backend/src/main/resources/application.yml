@@ -1,0 +1,74 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: campus-safety
+
+  # PostgreSQL 数据库
+  datasource:
+    url: jdbc:postgresql://localhost:5432/campus_safety
+    username: postgres
+    password: 1967748190wjk
+    driver-class-name: org.postgresql.Driver
+
+  # JPA 配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Shanghai
+
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
+  # Jackson 配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
+# JWT 配置
+jwt:
+  secret: CampusSafety2026SecretKeyForJwtTokenGenerationMustBeLongEnough
+  expiration: 86400000 # 24小时
+
+# Knife4j API文档
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: '所有接口'
+      paths-to-match: '/**'
+      packages-to-scan: com.campussafety.controller
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    swagger-model-name: '数据模型'
+
+# 日志级别
+logging:
+  level:
+    com.campussafety: DEBUG
+    org.springframework.security: DEBUG

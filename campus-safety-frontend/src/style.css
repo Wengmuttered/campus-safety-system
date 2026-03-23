@@ -1,0 +1,105 @@
+:root {
+  --primary: #1e3a5f;
+  --primary-light: #2c5282;
+  --accent: #e53e3e;
+  --accent-orange: #ed8936;
+  --success: #38a169;
+  --warning: #d69e2e;
+  --bg-dark: #0f1923;
+  --bg-card: #1a2332;
+  --bg-sidebar: #142030;
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --border-color: #2d3748;
+  --gradient-primary: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  --gradient-danger: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  --gradient-success: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  --gradient-warning: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Element Plus 暗色主题覆盖 */
+.el-menu {
+  border-right: none !important;
+}
+
+.el-card {
+  --el-card-bg-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius) !important;
+  color: var(--text-primary) !important;
+}
+
+.el-table {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(30, 58, 95, 0.3) !important;
+  --el-table-row-hover-bg-color: rgba(44, 82, 130, 0.2) !important;
+  --el-table-text-color: var(--text-primary) !important;
+  --el-table-header-text-color: var(--text-secondary) !important;
+  --el-table-border-color: var(--border-color) !important;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* 动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
