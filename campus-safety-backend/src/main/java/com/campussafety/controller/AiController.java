@@ -40,4 +40,17 @@ public class AiController {
         Map<String, Object> result = aiService.analyzeEvents(days);
         return ApiResponse.success(result);
     }
+
+    @GetMapping("/health")
+    public ApiResponse<Map<String, Object>> health() {
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = restTemplate.getForObject(
+                    "http://localhost:8089/api/ai/health", Map.class);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            return ApiResponse.success(Map.of("status", "offline", "message", "AI服务不可用"));
+        }
+    }
 }

@@ -1,26 +1,26 @@
 import api from './index'
 
-const AI_BASE = 'http://localhost:8089/api/ai'
-
+// AI API 通过后端代理层调用，不直接暴露 Python 服务
 export const aiApi = {
   /** 风险预测 */
   predictRisk: (campusId: number = 1) =>
-    api.post(`${AI_BASE}/risk-prediction`, { campus_id: campusId }, { baseURL: '' }),
+    api.post('/ai/risk-prediction', null, { params: { campusId } }),
 
   /** 热力图数据 */
   getHeatmap: (params?: { center_lng?: number; center_lat?: number; grid_size?: number }) =>
-    api.post(`${AI_BASE}/heatmap`, {
-      campus_id: 1,
-      center_lng: params?.center_lng ?? 110.3308,
-      center_lat: params?.center_lat ?? 20.0588,
-      grid_size: params?.grid_size ?? 20,
-    }, { baseURL: '' }),
+    api.post('/ai/heatmap', null, {
+      params: {
+        centerLng: params?.center_lng ?? 110.3308,
+        centerLat: params?.center_lat ?? 20.0588,
+        gridSize: params?.grid_size ?? 20,
+      }
+    }),
 
   /** 历史事件分析 */
   analyzeEvents: (days: number = 90) =>
-    api.get(`${AI_BASE}/event-analysis`, { params: { days }, baseURL: '' }),
+    api.get('/ai/event-analysis', { params: { days } }),
 
   /** 健康检查 */
   health: () =>
-    api.get(`${AI_BASE}/health`, { baseURL: '' }),
+    api.get('/ai/health'),
 }
