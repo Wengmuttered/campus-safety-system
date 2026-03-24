@@ -189,6 +189,13 @@ public class CampusSafetyService {
         return drillPlanRepository.save(plan);
     }
 
+    public DrillPlan updateDrillSummary(Long id, String summary) {
+        DrillPlan plan = drillPlanRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("演练计划不存在"));
+        plan.setSummary(summary);
+        return drillPlanRepository.save(plan);
+    }
+
     // ========== 仪表盘统计 ==========
 
     public DashboardStats getDashboardStats(Long campusId) {

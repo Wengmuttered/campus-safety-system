@@ -96,7 +96,9 @@ export const drillApi = {
     api.get('/drills', { params: { campusId } }),
   createDrill: (data: any) => api.post('/drills', data),
   updateStatus: (id: number, status: string) =>
-    api.put(`/drills/${id}/status`, null, { params: { status } })
+    api.put(`/drills/${id}/status`, null, { params: { status } }),
+  updateSummary: (id: number, summary: string) =>
+    api.put(`/drills/${id}/summary`, { summary })
 }
 
 // ========== 仪表盘 API ==========

@@ -54,7 +54,31 @@
           <span class="demo-item" @click="fillDemo('student01', '123456')">学生</span>
         </div>
       </div>
+
+      <div class="register-link">
+        <span @click="showRegister = true">没有账号？注册新用户 →</span>
+      </div>
     </div>
+
+    <!-- 注册弹窗 -->
+    <el-dialog v-model="showRegister" title="注册新用户" width="420px" append-to-body>
+      <el-form :model="regForm" label-width="70px">
+        <el-form-item label="用户名"><el-input v-model="regForm.username" /></el-form-item>
+        <el-form-item label="密码"><el-input v-model="regForm.password" type="password" show-password /></el-form-item>
+        <el-form-item label="姓名"><el-input v-model="regForm.realName" /></el-form-item>
+        <el-form-item label="手机号"><el-input v-model="regForm.phone" /></el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="regForm.role" style="width:100%">
+            <el-option label="学生" value="STUDENT" />
+            <el-option label="教师" value="TEACHER" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRegister = false">取消</el-button>
+        <el-button type="primary" :loading="regLoading" @click="handleRegister">注册</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -115,6 +139,36 @@ function particleStyle(_n: number) {
     top: `${Math.random() * 100}%`,
     animationDelay: `${Math.random() * 5}s`,
     animationDuration: `${Math.random() * 3 + 3}s`
+  }
+}
+
+const showRegister = ref(false)
+const regLoading = ref(false)
+const regForm = reactive({
+  username: '', password: '123456', realName: '',
+  phone: '', role: 'STUDENT', campusId: 1
+})
+
+async function handleRegister() {
+  if (!regForm.username || !regForm.password) {
+    ElMessage.warning('请填写用户名和密码')
+    return
+  }
+  regLoading.value = true
+  try {
+    const res: any = await authApi.register(regForm)
+    if (res.code === 200) {
+      ElMessage.success('注册成功，请登录')
+      showRegister.value = false
+      form.username = regForm.username
+      form.password = regForm.password
+    } else {
+      ElMessage.error(res.message || '注册失败')
+    }
+  } catch {
+    ElMessage.error('注册失败')
+  } finally {
+    regLoading.value = false
   }
 }
 </script>
@@ -254,5 +308,19 @@ function particleStyle(_n: number) {
 .demo-item:hover {
   background: rgba(99, 179, 237, 0.1);
   border-color: #63b3ed;
+}
+
+.register-link {
+  margin-top: 16px;
+  text-align: center;
+}
+.register-link span {
+  font-size: 13px;
+  color: #63b3ed;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.register-link span:hover {
+  color: #90cdf4;
 }
 </style>

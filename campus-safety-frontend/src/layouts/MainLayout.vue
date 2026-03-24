@@ -43,11 +43,11 @@
           <el-icon><TrendCharts /></el-icon>
           <span>风险分析</span>
         </el-menu-item>
-        <el-menu-item index="/users">
+        <el-menu-item index="/users" v-if="userStore.role === 'ADMIN'">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
-        <el-menu-item index="/safety-points">
+        <el-menu-item index="/safety-points" v-if="userStore.role === 'ADMIN' || userStore.role === 'SECURITY'">
           <el-icon><Location /></el-icon>
           <span>点位管理</span>
         </el-menu-item>

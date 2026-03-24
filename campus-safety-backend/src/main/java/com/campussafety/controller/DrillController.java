@@ -30,4 +30,10 @@ public class DrillController {
                                                 @RequestParam DrillPlan.DrillStatus status) {
         return ApiResponse.success(service.updateDrillStatus(id, status));
     }
+
+    @PutMapping("/{id}/summary")
+    public ApiResponse<DrillPlan> updateSummary(@PathVariable Long id,
+                                                 @RequestBody java.util.Map<String, String> body) {
+        return ApiResponse.success("评估已提交", service.updateDrillSummary(id, body.get("summary")));
+    }
 }
