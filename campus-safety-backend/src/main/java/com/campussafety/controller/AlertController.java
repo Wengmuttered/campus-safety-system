@@ -21,7 +21,8 @@ public class AlertController {
     @PostMapping("/sos")
     public ApiResponse<AlertRecord> sendSos(@Valid @RequestBody SosRequest request,
                                              Authentication auth) {
-        AlertRecord alert = service.createSosAlert(request, auth.getName());
+        String username = (auth != null) ? auth.getName() : "anonymous";
+        AlertRecord alert = service.createSosAlert(request, username);
         return ApiResponse.success("求助信息已发送", alert);
     }
 
