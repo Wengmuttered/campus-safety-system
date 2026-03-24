@@ -27,6 +27,7 @@ public class CampusSafetyService {
     private final DrillPlanRepository drillPlanRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AiAnalysisService aiAnalysisService;
 
     // ========== 校区与地图 ==========
 
@@ -120,7 +121,10 @@ public class CampusSafetyService {
 
     // ========== 事件管理 ==========
 
-    public Page<EmergencyEvent> getEvents(Long campusId, Pageable pageable) {
+    public Page<EmergencyEvent> getEvents(Long campusId, EmergencyEvent.EventStatus status, Pageable pageable) {
+        if (status != null) {
+            return eventRepository.findByCampusIdAndStatusOrderByCreatedAtDesc(campusId, status, pageable);
+        }
         return eventRepository.findByCampusIdOrderByCreatedAtDesc(campusId, pageable);
     }
 
@@ -141,6 +145,15 @@ public class CampusSafetyService {
             warning.put("lng", saved.getLng());
             warning.put("lat", saved.getLat());
             messagingTemplate.convertAndSend("/topic/notifications", warning);
+        }
+        // 推送事件数据给 AI 服务更新模型
+        if (saved.getLng() != null && saved.getLat() != null) {
+            aiAnalysisService.ingestEvent(
+                saved.getType().name(), saved.getSeverity().name(),
+                saved.getLocationDesc() != null ? saved.getLocationDesc() : "未知位置",
+                saved.getLng(), saved.getLat(),
+                saved.getOccurredAt() != null ? saved.getOccurredAt().toString() : java.time.LocalDateTime.now().toString()
+            );
         }
 
         return saved;

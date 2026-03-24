@@ -9,6 +9,8 @@
         <el-button type="primary" @click="resetView">
           <el-icon><Aim /></el-icon> 重置视角
         </el-button>
+        <el-switch v-model="showEvents" active-text="显示事件" inactive-text="隐藏事件"
+                   style="margin-left:12px" @change="loadEvents" />
       </div>
       <div class="toolbar-right">
         <el-tag v-for="t in pointTypes" :key="t.value" :type="t.tagType" effect="dark" class="legend-tag">
@@ -72,6 +74,31 @@
             :pixel-offset="[0, -20]"
           />
         </vc-entity>
+
+        <!-- 活跃事件标注 -->
+        <vc-entity
+          v-for="e in activeEvents"
+          :key="'e-' + e.id"
+          :position="[e.lng, e.lat, 0]"
+          :name="e.title"
+          :description="'类型: ' + eventTypeLabel(e.type) + ' | 严重程度: ' + e.severity + ' | 状态: ' + e.status"
+        >
+          <vc-graphics-point
+            :pixel-size="16"
+            :color="eventSeverityColor(e.severity)"
+            :outline-color="'#fff'"
+            :outline-width="2"
+          />
+          <vc-graphics-label
+            :text="'⚠️ ' + e.title"
+            :font="'13px sans-serif'"
+            :fill-color="'#e53e3e'"
+            :outline-color="'#000'"
+            :outline-width="2"
+            :style="'FILL_AND_OUTLINE'"
+            :pixel-offset="[0, -28]"
+          />
+        </vc-entity>
       </vc-viewer>
     </div>
 
@@ -96,12 +123,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { mapApi, safetyPointApi } from '../api'
+import { mapApi, safetyPointApi, eventApi } from '../api'
 
 const viewerRef = ref<any>(null)
 const buildings = ref<any[]>([])
 const safetyPoints = ref<any[]>([])
+const activeEvents = ref<any[]>([])
 const selectedType = ref('')
+const showEvents = ref(true)
 let viewerInstance: any = null
 
 const pointTypes = [
@@ -177,6 +206,36 @@ function flyToPoint(point: any) {
   }
 }
 
+const eventTypeMap: Record<string, string> = {
+  FIRE: '火灾', EARTHQUAKE: '地震', FLOOD: '洪水', TYPHOON: '台风',
+  CHEMICAL_LEAK: '化学品泄漏', POWER_OUTAGE: '停电', VIOLENCE: '暴力事件',
+  MEDICAL: '医疗急救', TRAFFIC: '交通事故', OTHER: '其他'
+}
+
+function eventTypeLabel(type: string) {
+  return eventTypeMap[type] || type
+}
+
+function eventSeverityColor(severity: string) {
+  const m: Record<string, string> = {
+    CRITICAL: '#e53e3e', HIGH: '#ed8936', MEDIUM: '#d69e2e', LOW: '#38a169'
+  }
+  return m[severity] || '#a0aec0'
+}
+
+async function loadEvents() {
+  if (!showEvents.value) { activeEvents.value = []; return }
+  try {
+    const res: any = await eventApi.getEvents(1, 0, 50)
+    if (res.code === 200) {
+      // 只显示未关闭的事件
+      activeEvents.value = (res.data?.content || []).filter(
+        (e: any) => e.status !== 'CLOSED' && e.status !== 'RESOLVED' && e.lng && e.lat
+      )
+    }
+  } catch { activeEvents.value = [] }
+}
+
 onMounted(async () => {
   try {
     const [bRes, pRes]: any[] = await Promise.all([
@@ -185,6 +244,8 @@ onMounted(async () => {
     ])
     if (bRes.code === 200) buildings.value = bRes.data
     if (pRes.code === 200) safetyPoints.value = pRes.data
+    // 加载活跃事件
+    loadEvents()
   } catch {
     // 使用初始化数据中的坐标模拟
     buildings.value = [

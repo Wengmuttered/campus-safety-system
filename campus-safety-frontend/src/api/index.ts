@@ -57,8 +57,13 @@ export const mapApi = {
 export const safetyPointApi = {
   getPoints: (campusId: number) => api.get('/safety-points', { params: { campusId } }),
   create: (data: any) => api.post('/safety-points', data),
+  createPoint: (data: any) => api.post('/safety-points', data),
   update: (id: number, data: any) => api.put(`/safety-points/${id}`, data),
-  delete: (id: number) => api.delete(`/safety-points/${id}`)
+  updatePoint: (id: number, data: any) => api.put(`/safety-points/${id}`, data),
+  updateStatus: (id: number, status: string) =>
+    api.put(`/safety-points/${id}/status`, null, { params: { status } }),
+  delete: (id: number) => api.delete(`/safety-points/${id}`),
+  deletePoint: (id: number) => api.delete(`/safety-points/${id}`)
 }
 
 // ========== 报警 API ==========
@@ -72,8 +77,8 @@ export const alertApi = {
 
 // ========== 事件 API ==========
 export const eventApi = {
-  getEvents: (campusId: number, page = 0, size = 20) =>
-    api.get('/events', { params: { campusId, page, size } }),
+  getEvents: (campusId: number, page = 0, size = 20, status?: string) =>
+    api.get('/events', { params: { campusId, page, size, ...(status ? { status } : {}) } }),
   createEvent: (data: any) => api.post('/events', data),
   updateStatus: (id: number, status: string) =>
     api.put(`/events/${id}/status`, null, { params: { status } })
@@ -98,4 +103,20 @@ export const drillApi = {
 export const dashboardApi = {
   getStats: (campusId = 1) =>
     api.get('/dashboard/stats', { params: { campusId } })
+}
+
+// ========== 用户管理 API ==========
+export const userApi = {
+  getUsers: (page = 0, size = 20) =>
+    api.get('/users', { params: { page, size } }),
+  updateRole: (id: number, role: string) =>
+    api.put(`/users/${id}/role`, null, { params: { role } }),
+  toggleEnabled: (id: number) =>
+    api.put(`/users/${id}/toggle`),
+  updateUser: (id: number, data: any) =>
+    api.put(`/users/${id}`, data),
+  deleteUser: (id: number) =>
+    api.delete(`/users/${id}`),
+  resetPassword: (id: number) =>
+    api.put(`/users/${id}/reset-password`)
 }

@@ -17,6 +17,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CampusRepository campusRepository;
     private final BuildingRepository buildingRepository;
     private final SafetyPointRepository safetyPointRepository;
+    private final EvacuationRouteRepository evacuationRouteRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -168,6 +169,59 @@ public class DataInitializer implements CommandLineRunner {
                 .buildingId(buildings[1].getId()).campusId(campus.getId())
                 .status(SafetyPoint.PointStatus.NORMAL).build());
 
-        log.info("演示数据初始化完成：1个校区, 3个用户, {}个建筑, 8个安全点位", buildings.length);
+        // 7. 创建疏散路线
+        // 理工楼
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("理工楼北侧楼梯疏散路线")
+                .buildingId(buildings[0].getId()).campusId(campus.getId())
+                .startFloor(6).distance(120.0).estimatedTime(90).capacity(200)
+                .accessible(false).description("从6楼北侧楼梯依次下行至1楼北门出口，到达操场集合点").build());
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("理工楼南侧电梯+楼梯路线")
+                .buildingId(buildings[0].getId()).campusId(campus.getId())
+                .startFloor(6).distance(150.0).estimatedTime(120).capacity(150)
+                .accessible(true).description("从6楼经南侧无障碍电梯至1楼，南门出口疏散至广场").build());
+
+        // 图书馆
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("图书馆中央楼梯疏散路线")
+                .buildingId(buildings[1].getId()).campusId(campus.getId())
+                .startFloor(5).distance(100.0).estimatedTime(80).capacity(300)
+                .accessible(false).description("从5楼中央楼梯下行，经正门疏散至前广场").build());
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("图书馆消防通道路线")
+                .buildingId(buildings[1].getId()).campusId(campus.getId())
+                .startFloor(5).distance(90.0).estimatedTime(70).capacity(200)
+                .accessible(false).description("从5楼西侧消防通道下行，经侧门疏散至停车场").build());
+
+        // 学生食堂
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("食堂主出口疏散路线")
+                .buildingId(buildings[2].getId()).campusId(campus.getId())
+                .startFloor(3).distance(60.0).estimatedTime(45).capacity(500)
+                .accessible(true).description("从3楼经主楼梯下行，经正门和侧门同时疏散").build());
+
+        // 体育馆
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("体育馆四向疏散路线")
+                .buildingId(buildings[3].getId()).campusId(campus.getId())
+                .startFloor(2).distance(80.0).estimatedTime(60).capacity(1000)
+                .accessible(true).description("体育馆设有东南西北四个安全出口，可同时向四个方向疏散").build());
+
+        // 学生宿舍1栋
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("宿舍楼梯疏散路线")
+                .buildingId(buildings[4].getId()).campusId(campus.getId())
+                .startFloor(7).distance(140.0).estimatedTime(100).capacity(250)
+                .accessible(false).description("从7楼经两侧楼梯交替下行至1楼，经正门疏散至宿舍区空地").build());
+
+        // 行政楼
+        evacuationRouteRepository.save(EvacuationRoute.builder()
+                .name("行政楼疏散路线")
+                .buildingId(buildings[5].getId()).campusId(campus.getId())
+                .startFloor(4).distance(70.0).estimatedTime(50).capacity(150)
+                .accessible(true).description("从4楼经无障碍电梯或楼梯下行，经正门疏散至行政广场").build());
+
+        log.info("演示数据初始化完成：1个校区, 3个用户, {}个建筑, 8个安全点位, 9条疏散路线", buildings.length);
     }
 }

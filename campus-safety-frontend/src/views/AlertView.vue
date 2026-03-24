@@ -64,6 +64,10 @@ import { alertApi } from '../api'
 
 const sending = ref(false)
 const myAlerts = ref<any[]>([])
+const userLng = ref(110.3308)
+const userLat = ref(20.0588)
+const locating = ref(false)
+const locationObtained = ref(false)
 
 const form = reactive({
   alertType: 'SOS',
@@ -84,13 +88,32 @@ function statusTag(s: string) {
   return m[s] || 'info'
 }
 
+/** 获取用户当前位置 */
+function detectLocation() {
+  if (!navigator.geolocation) return
+  locating.value = true
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLng.value = Number(pos.coords.longitude.toFixed(6))
+      userLat.value = Number(pos.coords.latitude.toFixed(6))
+      locationObtained.value = true
+      locating.value = false
+    },
+    () => {
+      locating.value = false
+      // 定位失败，使用校区中心默认坐标
+    },
+    { enableHighAccuracy: true, timeout: 5000 }
+  )
+}
+
 async function sendSos() {
   sending.value = true
   try {
     const res: any = await alertApi.sendSos({
       alertType: form.alertType,
-      lng: 110.3308,
-      lat: 20.0588,
+      lng: userLng.value,
+      lat: userLat.value,
       locationDesc: form.locationDesc,
       content: form.content
     })
@@ -98,6 +121,7 @@ async function sendSos() {
       ElMessage.success('求助信息已发送，安保人员将尽快响应！')
       form.locationDesc = ''
       form.content = ''
+      loadAlerts()
     }
   } catch {
     ElMessage.warning('求助信息发送失败，请拨打校园应急电话')
@@ -106,13 +130,18 @@ async function sendSos() {
   }
 }
 
-onMounted(async () => {
+async function loadAlerts() {
   try {
-    const res: any = await alertApi.getAlerts('PENDING', 0, 10)
+    const res: any = await alertApi.getAlerts('PENDING', 0, 20)
     if (res.code === 200) myAlerts.value = res.data?.content || []
   } catch {
     // ignore
   }
+}
+
+onMounted(() => {
+  detectLocation()
+  loadAlerts()
 })
 </script>
 

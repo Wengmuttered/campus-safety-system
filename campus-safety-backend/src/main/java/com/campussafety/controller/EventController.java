@@ -18,9 +18,10 @@ public class EventController {
     @GetMapping
     public ApiResponse<Page<EmergencyEvent>> getEvents(
             @RequestParam Long campusId,
+            @RequestParam(required = false) EmergencyEvent.EventStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.success(service.getEvents(campusId, PageRequest.of(page, size)));
+        return ApiResponse.success(service.getEvents(campusId, status, PageRequest.of(page, size)));
     }
 
     @PostMapping

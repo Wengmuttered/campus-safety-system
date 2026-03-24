@@ -57,6 +57,18 @@ const routes = [
         name: 'Risk',
         component: () => import('../views/RiskView.vue'),
         meta: { title: '风险分析' }
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('../views/UserManageView.vue'),
+        meta: { title: '用户管理' }
+      },
+      {
+        path: 'safety-points',
+        name: 'SafetyPoints',
+        component: () => import('../views/SafetyPointManageView.vue'),
+        meta: { title: '点位管理' }
       }
     ]
   }

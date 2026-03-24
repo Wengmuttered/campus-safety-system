@@ -35,4 +35,14 @@ public class SafetyPointController {
         service.deleteSafetyPoint(id);
         return ApiResponse.success("删除成功", null);
     }
+
+    @PutMapping("/{id}/status")
+    public ApiResponse<SafetyPoint> updateStatus(@PathVariable Long id,
+                                                  @RequestParam SafetyPoint.PointStatus status) {
+        SafetyPoint point = service.getSafetyPointsByCampus(1L).stream()
+                .filter(p -> p.getId().equals(id)).findFirst()
+                .orElseThrow(() -> new RuntimeException("点位不存在"));
+        point.setStatus(status);
+        return ApiResponse.success("状态已更新", service.updateSafetyPoint(id, point));
+    }
 }

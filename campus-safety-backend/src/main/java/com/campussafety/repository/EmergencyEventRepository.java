@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, Long> {
     Page<EmergencyEvent> findByCampusIdOrderByCreatedAtDesc(Long campusId, Pageable pageable);
+    Page<EmergencyEvent> findByCampusIdAndStatusOrderByCreatedAtDesc(Long campusId, EmergencyEvent.EventStatus status, Pageable pageable);
     List<EmergencyEvent> findByStatusIn(List<EmergencyEvent.EventStatus> statuses);
     
     @Query("SELECT e FROM EmergencyEvent e WHERE e.campusId = :campusId AND e.occurredAt BETWEEN :start AND :end")

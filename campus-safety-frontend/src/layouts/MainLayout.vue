@@ -43,6 +43,14 @@
           <el-icon><TrendCharts /></el-icon>
           <span>风险分析</span>
         </el-menu-item>
+        <el-menu-item index="/users">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
+        <el-menu-item index="/safety-points">
+          <el-icon><Location /></el-icon>
+          <span>点位管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -54,9 +62,11 @@
           <span class="page-title">{{ route.meta.title || '控制台' }}</span>
         </div>
         <div class="topbar-right">
-          <el-badge :value="alertCount" :hidden="alertCount === 0" class="alert-badge">
-            <el-icon :size="20" class="topbar-icon"><Bell /></el-icon>
+          <el-badge :value="alertCount" :hidden="alertCount === 0" class="alert-badge" @click.native="toggleNotifications">
+            <el-icon :size="20" class="topbar-icon" style="cursor:pointer"><Bell /></el-icon>
           </el-badge>
+          <span v-if="wsConnected" class="ws-status connected" title="实时连接正常">●</span>
+          <span v-else class="ws-status disconnected" title="实时连接断开">●</span>
           <el-dropdown trigger="click" @command="handleCommand">
             <div class="user-info">
               <el-avatar :size="32" class="avatar">
@@ -83,19 +93,45 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- 通知抽屉 -->
+    <el-drawer v-model="showNotifications" title="通知中心" direction="rtl" size="360px">
+      <div v-if="notifications.length === 0" style="text-align:center;padding:40px;color:#a0aec0">
+        暂无通知
+      </div>
+      <div v-else class="notification-list">
+        <div v-for="(n, i) in notifications" :key="i" class="notif-item">
+          <div class="notif-icon">{{ n.type === 'alert' ? '🚨' : '📢' }}</div>
+          <div class="notif-body">
+            <span class="notif-title">{{ n.data?.alertType || n.data?.title || '系统通知' }}</span>
+            <span class="notif-desc">{{ n.data?.content || n.data?.description || '' }}</span>
+            <span class="notif-time">{{ n.time }}</span>
+          </div>
+        </div>
+      </div>
+    </el-drawer>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElNotification } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import {
+  connectWebSocket, disconnectWebSocket,
+  alertCount as wsAlertCount, latestAlert, latestNotification,
+  clearAlertCount, notifications as wsNotifications, wsConnected
+} from '../utils/websocket'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const isCollapse = ref(false)
-const alertCount = ref(0)
+const showNotifications = ref(false)
+
+const alertCount = computed(() => wsAlertCount.value)
+const notifications = computed(() => wsNotifications.value)
 
 const roleLabel = computed(() => {
   const map: Record<string, string> = {
@@ -104,12 +140,55 @@ const roleLabel = computed(() => {
   return map[userStore.role] || userStore.role
 })
 
+// 监听新告警 - 弹窗提醒
+watch(latestAlert, (alert) => {
+  if (!alert) return
+  ElNotification({
+    title: '🚨 新告警',
+    message: `${alert.alertType === 'SOS' ? '紧急求助' : alert.alertType} - ${alert.realName || alert.username || '未知'}${alert.locationDesc ? ' @ ' + alert.locationDesc : ''}`,
+    type: 'error',
+    duration: 8000,
+    position: 'top-right'
+  })
+})
+
+// 监听系统通知
+watch(latestNotification, (notif) => {
+  if (!notif) return
+  ElNotification({
+    title: notif.title || '📢 系统通知',
+    message: notif.description || notif.content || '',
+    type: notif.type === 'EMERGENCY_WARNING' ? 'warning' : 'info',
+    duration: 6000,
+    position: 'top-right'
+  })
+})
+
 function handleCommand(cmd: string) {
   if (cmd === 'logout') {
+    disconnectWebSocket()
     userStore.logout()
     router.push('/login')
   }
 }
+
+function toggleNotifications() {
+  showNotifications.value = !showNotifications.value
+  if (showNotifications.value) {
+    clearAlertCount()
+  }
+}
+
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    connectWebSocket()
+  }
+})
+
+onUnmounted(() => {
+  disconnectWebSocket()
+})
 </script>
 
 <style scoped>
@@ -211,5 +290,56 @@ function handleCommand(cmd: string) {
 
 .alert-badge :deep(.el-badge__content) {
   background: var(--accent);
+}
+
+.ws-status {
+  font-size: 10px;
+  margin-left: -8px;
+}
+.ws-status.connected { color: #38a169; }
+.ws-status.disconnected { color: #e53e3e; }
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+}
+
+.notif-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.notif-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.notif-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.notif-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 </style>
