@@ -14,6 +14,20 @@
       </div>
     </div>
 
+    <!-- 第二行统计卡片 -->
+    <div class="stat-cards stat-cards-2">
+      <div class="stat-card" v-for="item in statCards2" :key="item.label"
+           :style="{ background: item.gradient }">
+        <div class="stat-icon">
+          <el-icon :size="28"><component :is="item.icon" /></el-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ item.value }}</span>
+          <span class="stat-label">{{ item.label }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 图表行 -->
     <div class="chart-row">
       <el-card class="chart-card">
@@ -129,6 +143,13 @@ const statCards = computed(() => [
   { label: '待处理报警', value: stats.value.pendingAlerts ?? 0, icon: 'Bell', gradient: 'var(--gradient-warning)' },
   { label: '安全点位', value: stats.value.totalSafetyPoints ?? 0, icon: 'MapLocation', gradient: 'var(--gradient-primary)' },
   { label: '建筑物', value: stats.value.totalBuildings ?? 0, icon: 'OfficeBuilding', gradient: 'var(--gradient-success)' }
+])
+
+const statCards2 = computed(() => [
+  { label: '待巡检', value: stats.value.pendingInspections ?? 0, icon: 'Search', gradient: 'linear-gradient(135deg, #805ad5, #b794f4)' },
+  { label: '未关闭隐患', value: stats.value.openHazards ?? 0, icon: 'WarningFilled', gradient: 'linear-gradient(135deg, #c05621, #ed8936)' },
+  { label: '物资预警', value: stats.value.lowStockSupplies ?? 0, icon: 'Box', gradient: 'linear-gradient(135deg, #c53030, #fc8181)' },
+  { label: '今日值班', value: stats.value.todayOnDuty ?? 0, icon: 'Calendar', gradient: 'linear-gradient(135deg, #2b6cb0, #63b3ed)' }
 ])
 
 // 事件趋势折线图配置

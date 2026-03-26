@@ -58,6 +58,68 @@ const routes = [
         component: () => import('../views/RiskView.vue'),
         meta: { title: '风险分析' }
       },
+      // ===== 新增模块 =====
+      {
+        path: 'inspection',
+        name: 'Inspection',
+        component: () => import('../views/InspectionView.vue'),
+        meta: { title: '安全巡检' }
+      },
+      {
+        path: 'hazard',
+        name: 'Hazard',
+        component: () => import('../views/HazardView.vue'),
+        meta: { title: '隐患排查' }
+      },
+      {
+        path: 'plans',
+        name: 'Plans',
+        component: () => import('../views/PlanView.vue'),
+        meta: { title: '应急预案' }
+      },
+      {
+        path: 'supplies',
+        name: 'Supplies',
+        component: () => import('../views/SupplyView.vue'),
+        meta: { title: '物资管理' }
+      },
+      {
+        path: 'duty',
+        name: 'Duty',
+        component: () => import('../views/DutyView.vue'),
+        meta: { title: '值班管理' }
+      },
+      {
+        path: 'notices',
+        name: 'Notices',
+        component: () => import('../views/NoticeView.vue'),
+        meta: { title: '通知公告' }
+      },
+      {
+        path: 'training',
+        name: 'Training',
+        component: () => import('../views/TrainingView.vue'),
+        meta: { title: '安全培训' }
+      },
+      {
+        path: 'statistics',
+        name: 'Statistics',
+        component: () => import('../views/StatisticsView.vue'),
+        meta: { title: '统计分析' }
+      },
+      {
+        path: 'logs',
+        name: 'Logs',
+        component: () => import('../views/LogView.vue'),
+        meta: { title: '操作日志' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('../views/ProfileView.vue'),
+        meta: { title: '个人中心' }
+      },
+      // ===== 管理模块 =====
       {
         path: 'users',
         name: 'Users',
@@ -69,6 +131,12 @@ const routes = [
         name: 'SafetyPoints',
         component: () => import('../views/SafetyPointManageView.vue'),
         meta: { title: '点位管理' }
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('../views/SystemSettingsView.vue'),
+        meta: { title: '系统设置' }
       }
     ]
   }

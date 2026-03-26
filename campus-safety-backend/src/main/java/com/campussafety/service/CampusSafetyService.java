@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,13 @@ public class CampusSafetyService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final AiAnalysisService aiAnalysisService;
+    // 新增模块Repository
+    private final InspectionTaskRepository inspectionTaskRepository;
+    private final HazardReportRepository hazardReportRepository;
+    private final EmergencySupplyRepository emergencySupplyRepository;
+    private final DutyScheduleRepository dutyScheduleRepository;
+    private final NoticeRepository noticeRepository;
+    private final TrainingCourseRepository trainingCourseRepository;
 
     // ========== 校区与地图 ==========
 
@@ -199,6 +207,11 @@ public class CampusSafetyService {
     // ========== 仪表盘统计 ==========
 
     public DashboardStats getDashboardStats(Long campusId) {
+        long lowStockCount = 0;
+        try { lowStockCount = emergencySupplyRepository.findByCampusIdAndStatus(campusId, EmergencySupply.SupplyStatus.LOW_STOCK).size(); } catch (Exception ignored) {}
+        long todayDuty = 0;
+        try { todayDuty = dutyScheduleRepository.findByCampusIdAndDutyDateOrderByStartTimeAsc(campusId, LocalDate.now()).size(); } catch (Exception ignored) {}
+
         return DashboardStats.builder()
                 .totalEvents(eventRepository.count())
                 .activeEvents(eventRepository.countByCampusIdAndStatus(campusId, EmergencyEvent.EventStatus.IN_PROGRESS))
@@ -206,6 +219,14 @@ public class CampusSafetyService {
                 .totalSafetyPoints(safetyPointRepository.findByCampusId(campusId).size())
                 .totalBuildings(buildingRepository.findByCampusId(campusId).size())
                 .plannedDrills(drillPlanRepository.findByStatus(DrillPlan.DrillStatus.PLANNED).size())
+                // 新模块统计
+                .pendingInspections(inspectionTaskRepository.countByCampusIdAndStatus(campusId, InspectionTask.InspectionStatus.PENDING))
+                .openHazards(hazardReportRepository.countByCampusIdAndStatus(campusId, HazardReport.HazardStatus.REPORTED)
+                        + hazardReportRepository.countByCampusIdAndStatus(campusId, HazardReport.HazardStatus.RECTIFYING))
+                .lowStockSupplies(lowStockCount)
+                .todayOnDuty(todayDuty)
+                .publishedNotices(noticeRepository.count())
+                .activeCourses(trainingCourseRepository.count())
                 .build();
     }
 }

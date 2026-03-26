@@ -23,6 +23,8 @@
           <el-icon><MapLocation /></el-icon>
           <span>校园地图</span>
         </el-menu-item>
+
+        <!-- 应急响应 -->
         <el-menu-item index="/alert">
           <el-icon><Bell /></el-icon>
           <span>一键求助</span>
@@ -35,14 +37,52 @@
           <el-icon><Guide /></el-icon>
           <span>疏散导航</span>
         </el-menu-item>
+        <el-menu-item index="/plans">
+          <el-icon><Notebook /></el-icon>
+          <span>应急预案</span>
+        </el-menu-item>
         <el-menu-item index="/drill">
           <el-icon><VideoCamera /></el-icon>
           <span>应急演练</span>
+        </el-menu-item>
+
+        <!-- 安全管理 -->
+        <el-menu-item index="/inspection">
+          <el-icon><Search /></el-icon>
+          <span>安全巡检</span>
+        </el-menu-item>
+        <el-menu-item index="/hazard">
+          <el-icon><Warning /></el-icon>
+          <span>隐患排查</span>
+        </el-menu-item>
+        <el-menu-item index="/supplies">
+          <el-icon><Box /></el-icon>
+          <span>物资管理</span>
         </el-menu-item>
         <el-menu-item index="/risk">
           <el-icon><TrendCharts /></el-icon>
           <span>风险分析</span>
         </el-menu-item>
+
+        <!-- 运营支撑 -->
+        <el-menu-item index="/duty">
+          <el-icon><Calendar /></el-icon>
+          <span>值班管理</span>
+        </el-menu-item>
+        <el-menu-item index="/notices">
+          <el-icon><ChatDotSquare /></el-icon>
+          <span>通知公告</span>
+        </el-menu-item>
+        <el-menu-item index="/training">
+          <el-icon><Reading /></el-icon>
+          <span>安全培训</span>
+        </el-menu-item>
+        <el-menu-item index="/statistics">
+          <el-icon><DataLine /></el-icon>
+          <span>统计分析</span>
+        </el-menu-item>
+
+        <!-- 系统管理 -->
         <el-menu-item index="/users" v-if="userStore.role === 'ADMIN'">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -50,6 +90,14 @@
         <el-menu-item index="/safety-points" v-if="userStore.role === 'ADMIN' || userStore.role === 'SECURITY'">
           <el-icon><Location /></el-icon>
           <span>点位管理</span>
+        </el-menu-item>
+        <el-menu-item index="/logs" v-if="userStore.role === 'ADMIN'">
+          <el-icon><List /></el-icon>
+          <span>操作日志</span>
+        </el-menu-item>
+        <el-menu-item index="/settings" v-if="userStore.role === 'ADMIN'">
+          <el-icon><Setting /></el-icon>
+          <span>系统设置</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -78,6 +126,9 @@
               <el-dropdown-menu>
                 <el-dropdown-item disabled>
                   角色：{{ roleLabel }}
+                </el-dropdown-item>
+                <el-dropdown-item command="profile">
+                  <el-icon><User /></el-icon>个人中心
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>退出登录
@@ -165,7 +216,9 @@ watch(latestNotification, (notif) => {
 })
 
 function handleCommand(cmd: string) {
-  if (cmd === 'logout') {
+  if (cmd === 'profile') {
+    router.push('/profile')
+  } else if (cmd === 'logout') {
     disconnectWebSocket()
     userStore.logout()
     router.push('/login')
