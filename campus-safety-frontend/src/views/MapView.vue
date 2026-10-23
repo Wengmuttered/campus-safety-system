@@ -34,6 +34,8 @@
         :full-screen-button="false"
         @ready="onViewerReady"
       >
+        <!-- 解决没有底图的问题：在 onViewerReady 中使用原生 API 添加 -->
+
         <!-- 建筑物标注 -->
         <vc-entity
           v-for="b in buildings"
@@ -122,9 +124,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { mapApi, safetyPointApi, eventApi } from '../api'
+import { ref, computed, watch } from 'vue'
+import { mapApi, mapLayerApi, safetyPointApi, eventApi } from '../api'
+import { useCampusStore } from '../stores/campus'
+import { getCampusViewport, TOP_DOWN_PITCH_DEG } from '../utils/campusMap'
+import { configureViewerPerformance, applyViewerBasemap, applyMapLayerDefinitionsFromApi } from '../utils/basemap'
 
+const campusStore = useCampusStore()
 const viewerRef = ref<any>(null)
 const buildings = ref<any[]>([])
 const safetyPoints = ref<any[]>([])
@@ -132,6 +138,7 @@ const activeEvents = ref<any[]>([])
 const selectedType = ref('')
 const showEvents = ref(true)
 let viewerInstance: any = null
+let globalCesium: any = null
 
 const pointTypes = [
   { value: 'FIRE_HYDRANT', label: '消防栓', icon: '🚒', tagType: 'danger' as const },
@@ -142,22 +149,16 @@ const pointTypes = [
   { value: 'CAMERA', label: '监控', icon: '📹', tagType: 'info' as const },
   { value: 'ALARM_BUTTON', label: '报警按钮', icon: '🔴', tagType: 'danger' as const },
   { value: 'FIRST_AID', label: '急救箱', icon: '🩹', tagType: 'warning' as const },
-  { value: 'ASSEMBLY_POINT', label: '集合点', icon: '📍', tagType: '' as const }
+  { value: 'ASSEMBLY_POINT', label: '集合点', icon: '📍', tagType: 'info' as const }
 ]
 
 const filteredPoints = computed(() => {
   if (!selectedType.value) return safetyPoints.value
-  return safetyPoints.value.filter(p => p.type === selectedType.value)
+  return safetyPoints.value.filter((p) => p.type === selectedType.value)
 })
 
-function pointEmoji(type: string) {
-  return pointTypes.find(t => t.value === type)?.icon || '📌'
-}
-
-function pointTypeLabel(type: string) {
-  return pointTypes.find(t => t.value === type)?.label || type
-}
-
+function pointEmoji(type: string) { return pointTypes.find((t) => t.value === type)?.icon || '📌' }
+function pointTypeLabel(type: string) { return pointTypes.find((t) => t.value === type)?.label || type }
 function pointColor(type: string) {
   const colors: Record<string, string> = {
     FIRE_HYDRANT: '#e53e3e', FIRE_EXTINGUISHER: '#e53e3e',
@@ -169,41 +170,69 @@ function pointColor(type: string) {
 }
 
 function filterPoints() {
-  // computed自动处理
+  // computed 自动处理
 }
 
-function onViewerReady({ Cesium, viewer }: any) {
-  viewerInstance = viewer
-  // 飞到校区中心
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(110.3308, 20.0588, 1500),
+function flyToLocation(lng: number, lat: number, height: number, duration = 1.2) {
+  if (!viewerInstance?.camera || !globalCesium) return
+  viewerInstance.camera.flyTo({
+    destination: globalCesium.Cartesian3.fromDegrees(lng, lat, height),
     orientation: {
-      heading: Cesium.Math.toRadians(0),
-      pitch: Cesium.Math.toRadians(-45),
+      heading: 0,
+      pitch: globalCesium.Math.toRadians(TOP_DOWN_PITCH_DEG),
       roll: 0
     },
-    duration: 2
+    duration
   })
 }
 
-function resetView() {
-  if (viewerInstance) {
-    const Cesium = (window as any).Cesium
-    viewerInstance.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(110.3308, 20.0588, 1500),
-      duration: 1.5
-    })
+function flyToCampus(campusId: number, duration = 1.2) {
+  const campus = getCampusViewport(campusId)
+  flyToLocation(campus.lng, campus.lat, campus.defaultHeight, duration)
+}
+
+async function onViewerReady({ Cesium, viewer }: any) {
+  viewerInstance = viewer
+  globalCesium = Cesium
+  configureViewerPerformance(viewer)
+
+  try {
+    const res: any = await mapLayerApi.list()
+    const list = res?.data ?? []
+    if (Array.isArray(list) && list.length > 0 && applyMapLayerDefinitionsFromApi(Cesium, viewer, list)) {
+      /* 与控制台共用数据库图层配置 */
+    } else {
+      await applyViewerBasemap(Cesium, viewer)
+    }
+  } catch {
+    await applyViewerBasemap(Cesium, viewer)
+  }
+
+  applyViewerPerf(viewer)
+  flyToCampus(campusStore.currentCampusId, 1.8)
+}
+
+function applyViewerPerf(viewer: any) {
+  try {
+    if (viewer.scene?.globe) {
+      viewer.scene.globe.enableLighting = false
+      viewer.scene.globe.showGroundAtmosphere = false
+      viewer.scene.globe.depthTestAgainstTerrain = false
+      viewer.scene.globe.tileCacheSize = 1000
+    }
+    if (viewer.scene?.skyBox) viewer.scene.skyBox.show = false
+    viewer.resolutionScale = 1
+  } catch (e) {
+    console.warn('[地图] 渲染参数调优失败（非关键）', e)
   }
 }
 
+function resetView() {
+  flyToCampus(campusStore.currentCampusId, 1.1)
+}
+
 function flyToPoint(point: any) {
-  if (viewerInstance) {
-    const Cesium = (window as any).Cesium
-    viewerInstance.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(point.lng, point.lat, 300),
-      duration: 1
-    })
-  }
+  flyToLocation(point.lng, point.lat, 350, 1)
 }
 
 const eventTypeMap: Record<string, string> = {
@@ -212,62 +241,90 @@ const eventTypeMap: Record<string, string> = {
   MEDICAL: '医疗急救', TRAFFIC: '交通事故', OTHER: '其他'
 }
 
-function eventTypeLabel(type: string) {
-  return eventTypeMap[type] || type
-}
-
+function eventTypeLabel(type: string) { return eventTypeMap[type] || type }
 function eventSeverityColor(severity: string) {
-  const m: Record<string, string> = {
-    CRITICAL: '#e53e3e', HIGH: '#ed8936', MEDIUM: '#d69e2e', LOW: '#38a169'
-  }
+  const m: Record<string, string> = { CRITICAL: '#e53e3e', HIGH: '#ed8936', MEDIUM: '#d69e2e', LOW: '#38a169' }
   return m[severity] || '#a0aec0'
 }
 
+function getFallbackBuildings(campusId: number) {
+  if (campusId === 2) {
+    return [
+      { id: 21, name: '云龙校区机电工程学院教学楼', lng: 110.4578, lat: 19.8603, buildingType: '教学楼', floorCount: 5, capacity: 1800 },
+      { id: 22, name: '云龙校区图书信息中心', lng: 110.4563, lat: 19.8596, buildingType: '图书馆', floorCount: 4, capacity: 2000 },
+      { id: 23, name: '云龙校区食堂', lng: 110.4583, lat: 19.8593, buildingType: '食堂', floorCount: 2, capacity: 1200 },
+      { id: 24, name: '云龙校区学生公寓A栋', lng: 110.4587, lat: 19.859, buildingType: '宿舍', floorCount: 6, capacity: 600 },
+      { id: 25, name: '云龙校区汽车与轨道交通学院实训楼', lng: 110.4571, lat: 19.8608, buildingType: '实训楼', floorCount: 3, capacity: 800 }
+    ]
+  }
+  return [
+    { id: 1, name: '美兰校区信息工程学院教学楼', lng: 110.4034, lat: 20.0451, buildingType: '教学楼', floorCount: 6, capacity: 2000 },
+    { id: 2, name: '美兰校区图书馆', lng: 110.402, lat: 20.0447, buildingType: '图书馆', floorCount: 5, capacity: 3000 },
+    { id: 3, name: '美兰校区第一学生食堂', lng: 110.4044, lat: 20.0437, buildingType: '食堂', floorCount: 3, capacity: 1500 },
+    { id: 4, name: '美兰校区综合体育馆', lng: 110.4004, lat: 20.0461, buildingType: '体育场馆', floorCount: 2, capacity: 5000 },
+    { id: 5, name: '美兰校区学生公寓1号楼', lng: 110.4058, lat: 20.0431, buildingType: '宿舍', floorCount: 7, capacity: 500 },
+    { id: 6, name: '美兰校区行政办公楼', lng: 110.4026, lat: 20.0457, buildingType: '办公楼', floorCount: 4, capacity: 300 },
+    { id: 7, name: '美兰校区化学与环境工程学院实验楼', lng: 110.404, lat: 20.0453, buildingType: '实验楼', floorCount: 4, capacity: 600 }
+  ]
+}
+
+function getFallbackPoints(campusId: number) {
+  if (campusId === 2) {
+    return [
+      { id: 31, name: '云龙校区机电学院教学楼消防栓', type: 'FIRE_HYDRANT', lng: 110.4579, lat: 19.8604, status: 'NORMAL' },
+      { id: 32, name: '云龙校区图信中心AED', type: 'AED', lng: 110.4564, lat: 19.8597, status: 'NORMAL' },
+      { id: 33, name: '云龙校区田径场集合点', type: 'ASSEMBLY_POINT', lng: 110.4573, lat: 19.8606, status: 'NORMAL' },
+      { id: 34, name: '云龙校区东门安全出口', type: 'EXIT', lng: 110.4593, lat: 19.8588, status: 'NORMAL' }
+    ]
+  }
+  return [
+    { id: 1, name: '信息工程学院教学楼1楼消防栓', type: 'FIRE_HYDRANT', lng: 110.4035, lat: 20.0452, status: 'NORMAL' },
+    { id: 2, name: '图书馆AED', type: 'AED', lng: 110.4021, lat: 20.0448, status: 'NORMAL' },
+    { id: 3, name: '田径场集合点', type: 'ASSEMBLY_POINT', lng: 110.4007, lat: 20.0463, status: 'NORMAL' },
+    { id: 4, name: '东门安全出口', type: 'EXIT', lng: 110.4064, lat: 20.0449, status: 'NORMAL' },
+    { id: 5, name: '第一食堂灭火器', type: 'FIRE_EXTINGUISHER', lng: 110.4045, lat: 20.0438, status: 'NORMAL' },
+    { id: 6, name: '学生公寓1号楼急救箱', type: 'FIRST_AID', lng: 110.4059, lat: 20.0432, status: 'NORMAL' },
+    { id: 7, name: '行政办公楼监控', type: 'CAMERA', lng: 110.4027, lat: 20.0458, status: 'NORMAL' },
+    { id: 8, name: '图书馆报警按钮', type: 'ALARM_BUTTON', lng: 110.4019, lat: 20.0446, status: 'NORMAL' }
+  ]
+}
+
 async function loadEvents() {
-  if (!showEvents.value) { activeEvents.value = []; return }
+  if (!showEvents.value) {
+    activeEvents.value = []
+    return
+  }
   try {
-    const res: any = await eventApi.getEvents(1, 0, 50)
+    const res: any = await eventApi.getEvents(campusStore.currentCampusId, 0, 50)
     if (res.code === 200) {
-      // 只显示未关闭的事件
       activeEvents.value = (res.data?.content || []).filter(
         (e: any) => e.status !== 'CLOSED' && e.status !== 'RESOLVED' && e.lng && e.lat
       )
     }
-  } catch { activeEvents.value = [] }
+  } catch {
+    activeEvents.value = []
+  }
 }
 
-onMounted(async () => {
+async function loadCampusData(campusId: number) {
   try {
     const [bRes, pRes]: any[] = await Promise.all([
-      mapApi.getBuildings(1),
-      safetyPointApi.getPoints(1)
+      mapApi.getBuildings(campusId),
+      safetyPointApi.getPoints(campusId)
     ])
-    if (bRes.code === 200) buildings.value = bRes.data
-    if (pRes.code === 200) safetyPoints.value = pRes.data
-    // 加载活跃事件
-    loadEvents()
+    buildings.value = (bRes.code === 200 && Array.isArray(bRes.data) && bRes.data.length > 0) ? bRes.data : getFallbackBuildings(campusId)
+    safetyPoints.value = (pRes.code === 200 && Array.isArray(pRes.data) && pRes.data.length > 0) ? pRes.data : getFallbackPoints(campusId)
   } catch {
-    // 使用初始化数据中的坐标模拟
-    buildings.value = [
-      { id: 1, name: '理工楼', lng: 110.3310, lat: 20.0590, buildingType: '教学楼', floorCount: 6, capacity: 2000 },
-      { id: 2, name: '图书馆', lng: 110.3295, lat: 20.0585, buildingType: '图书馆', floorCount: 5, capacity: 3000 },
-      { id: 3, name: '学生食堂', lng: 110.3320, lat: 20.0575, buildingType: '食堂', floorCount: 3, capacity: 1500 },
-      { id: 4, name: '体育馆', lng: 110.3280, lat: 20.0600, buildingType: '体育场馆', floorCount: 2, capacity: 5000 },
-      { id: 5, name: '学生宿舍1栋', lng: 110.3335, lat: 20.0570, buildingType: '宿舍', floorCount: 7, capacity: 500 },
-      { id: 6, name: '行政楼', lng: 110.3300, lat: 20.0595, buildingType: '办公楼', floorCount: 4, capacity: 300 }
-    ]
-    safetyPoints.value = [
-      { id: 1, name: '理工楼1楼消防栓', type: 'FIRE_HYDRANT', lng: 110.3311, lat: 20.0591, status: 'NORMAL' },
-      { id: 2, name: '图书馆AED', type: 'AED', lng: 110.3296, lat: 20.0586, status: 'NORMAL' },
-      { id: 3, name: '操场集合点', type: 'ASSEMBLY_POINT', lng: 110.3282, lat: 20.0602, status: 'NORMAL' },
-      { id: 4, name: '东门安全出口', type: 'EXIT', lng: 110.3340, lat: 20.0588, status: 'NORMAL' },
-      { id: 5, name: '食堂灭火器', type: 'FIRE_EXTINGUISHER', lng: 110.3321, lat: 20.0576, status: 'NORMAL' },
-      { id: 6, name: '宿舍区急救箱', type: 'FIRST_AID', lng: 110.3336, lat: 20.0571, status: 'NORMAL' },
-      { id: 7, name: '行政楼监控', type: 'CAMERA', lng: 110.3301, lat: 20.0596, status: 'NORMAL' },
-      { id: 8, name: '图书馆报警按钮', type: 'ALARM_BUTTON', lng: 110.3294, lat: 20.0584, status: 'NORMAL' }
-    ]
+    buildings.value = getFallbackBuildings(campusId)
+    safetyPoints.value = getFallbackPoints(campusId)
   }
-})
+}
+
+watch(() => campusStore.currentCampusId, (campusId) => {
+  loadCampusData(campusId)
+  loadEvents()
+  flyToCampus(campusId, 1.2)
+}, { immediate: true })
 </script>
 
 <style scoped>

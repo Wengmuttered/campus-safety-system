@@ -23,13 +23,17 @@
           <el-icon><MapLocation /></el-icon>
           <span>校园地图</span>
         </el-menu-item>
+        <el-menu-item index="/monitor" v-if="isAdminOrSecurity">
+          <el-icon><VideoCamera /></el-icon>
+          <span>AI监控墙</span>
+        </el-menu-item>
 
         <!-- 应急响应 -->
         <el-menu-item index="/alert">
           <el-icon><Bell /></el-icon>
           <span>一键求助</span>
         </el-menu-item>
-        <el-menu-item index="/events">
+        <el-menu-item index="/events" v-if="isAdminOrSecurity">
           <el-icon><Document /></el-icon>
           <span>事件管理</span>
         </el-menu-item>
@@ -37,35 +41,35 @@
           <el-icon><Guide /></el-icon>
           <span>疏散导航</span>
         </el-menu-item>
-        <el-menu-item index="/plans">
+        <el-menu-item index="/plans" v-if="isAdminOrSecurity">
           <el-icon><Notebook /></el-icon>
           <span>应急预案</span>
         </el-menu-item>
-        <el-menu-item index="/drill">
+        <el-menu-item index="/drill" v-if="isAdminOrSecurity">
           <el-icon><VideoCamera /></el-icon>
           <span>应急演练</span>
         </el-menu-item>
 
         <!-- 安全管理 -->
-        <el-menu-item index="/inspection">
+        <el-menu-item index="/inspection" v-if="isAdminOrSecurity">
           <el-icon><Search /></el-icon>
           <span>安全巡检</span>
         </el-menu-item>
-        <el-menu-item index="/hazard">
+        <el-menu-item index="/hazard" v-if="isAdminOrSecurity || userStore.role === 'TEACHER'">
           <el-icon><Warning /></el-icon>
           <span>隐患排查</span>
         </el-menu-item>
-        <el-menu-item index="/supplies">
+        <el-menu-item index="/supplies" v-if="isAdminOrSecurity">
           <el-icon><Box /></el-icon>
           <span>物资管理</span>
         </el-menu-item>
-        <el-menu-item index="/risk">
+        <el-menu-item index="/risk" v-if="isAdminOrSecurity">
           <el-icon><TrendCharts /></el-icon>
           <span>风险分析</span>
         </el-menu-item>
 
         <!-- 运营支撑 -->
-        <el-menu-item index="/duty">
+        <el-menu-item index="/duty" v-if="isAdminOrSecurity">
           <el-icon><Calendar /></el-icon>
           <span>值班管理</span>
         </el-menu-item>
@@ -77,7 +81,7 @@
           <el-icon><Reading /></el-icon>
           <span>安全培训</span>
         </el-menu-item>
-        <el-menu-item index="/statistics">
+        <el-menu-item index="/statistics" v-if="isAdminOrSecurity">
           <el-icon><DataLine /></el-icon>
           <span>统计分析</span>
         </el-menu-item>
@@ -87,7 +91,7 @@
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
-        <el-menu-item index="/safety-points" v-if="userStore.role === 'ADMIN' || userStore.role === 'SECURITY'">
+        <el-menu-item index="/safety-points" v-if="isAdminOrSecurity">
           <el-icon><Location /></el-icon>
           <span>点位管理</span>
         </el-menu-item>
@@ -108,6 +112,19 @@
       <el-header class="topbar">
         <div class="topbar-left">
           <span class="page-title">{{ route.meta.title || '控制台' }}</span>
+          <el-select
+            v-model="campusStore.currentCampusId"
+            size="small"
+            class="campus-select"
+            @change="onCampusChange"
+          >
+            <el-option
+              v-for="c in campusStore.campusList"
+              :key="c.id"
+              :label="c.name"
+              :value="c.id"
+            />
+          </el-select>
         </div>
         <div class="topbar-right">
           <el-badge :value="alertCount" :hidden="alertCount === 0" class="alert-badge" @click.native="toggleNotifications">
@@ -141,7 +158,12 @@
 
       <!-- 页面内容 -->
       <el-main class="main-content">
-        <router-view />
+        <router-view v-slot="{ Component, route: currentRoute }">
+          <keep-alive>
+            <component :is="Component" v-if="currentRoute.meta.keepAlive" />
+          </keep-alive>
+          <component :is="Component" v-if="!currentRoute.meta.keepAlive" />
+        </router-view>
       </el-main>
     </el-container>
 
@@ -169,6 +191,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElNotification } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import { useCampusStore } from '../stores/campus'
 import {
   connectWebSocket, disconnectWebSocket,
   alertCount as wsAlertCount, latestAlert, latestNotification,
@@ -178,11 +201,13 @@ import {
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const campusStore = useCampusStore()
 const isCollapse = ref(false)
 const showNotifications = ref(false)
 
 const alertCount = computed(() => wsAlertCount.value)
 const notifications = computed(() => wsNotifications.value)
+const isAdminOrSecurity = computed(() => userStore.role === 'ADMIN' || userStore.role === 'SECURITY')
 
 const roleLabel = computed(() => {
   const map: Record<string, string> = {
@@ -232,10 +257,19 @@ function toggleNotifications() {
   }
 }
 
+function onCampusChange(id: number) {
+  campusStore.setCampus(id)
+  // 地图/控制台已经在组件内监听了校区变化，不必触发路由级重载
+  if (route.path === '/map' || route.path === '/dashboard') return
+  // 其他页面继续走一次轻量刷新，保持原有兼容性
+  router.replace({ path: route.path, query: { ...route.query, _t: Date.now() } })
+}
+
 onMounted(() => {
   const token = localStorage.getItem('token')
   if (token) {
     connectWebSocket()
+    campusStore.loadCampuses()
   }
 })
 
@@ -284,6 +318,19 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--border-color);
   padding: 0 24px;
   height: 60px !important;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.campus-select {
+  width: 220px;
 }
 
 .page-title {

@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jjwt.version>0.12.5</jjwt.version>
         <knife4j.version>4.5.0</knife4j.version>
     </properties>
@@ -64,6 +66,14 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- SQLite (离线瓦片 MBTiles 读取) -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.46.0.0</version>
             <scope>runtime</scope>
         </dependency>
 

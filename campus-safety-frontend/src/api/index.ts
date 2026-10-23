@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8088/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -53,6 +53,13 @@ export const mapApi = {
   getBuildings: (campusId: number) => api.get('/map/buildings', { params: { campusId } })
 }
 
+/** 地图在线图层（数据库配置，叠加顺序见 zOrder） */
+export const mapLayerApi = {
+  list: () => api.get('/map/layers'),
+  patch: (id: number, data: { visible?: boolean; opacity?: number }) =>
+    api.patch(`/map/layers/${id}`, data)
+}
+
 // ========== 安全点位 API ==========
 export const safetyPointApi = {
   getPoints: (campusId: number) => api.get('/safety-points', { params: { campusId } }),
@@ -87,7 +94,9 @@ export const eventApi = {
 // ========== 疏散路线 API ==========
 export const evacuationApi = {
   getRoutes: (buildingId: number) =>
-    api.get('/evacuation/routes', { params: { buildingId } })
+    api.get('/evacuation/routes', { params: { buildingId } }),
+  recommend: (buildingId: number, currentFloor = 1, personCount = 100) =>
+    api.get('/evacuation/recommend', { params: { buildingId, currentFloor, personCount } })
 }
 
 // ========== 演练 API ==========
@@ -254,4 +263,11 @@ export const systemApi = {
   update: (data: any) => api.put('/system/configs', data),
   batchUpdate: (items: any[]) => api.put('/system/configs/batch', items),
   delete: (id: number) => api.delete(`/system/configs/${id}`)
+}
+
+// ========== AI API（通过后端代理，已移除前端直连 Python 服务）==========
+export const aiApi = {
+  ingestEvent: (data: any) => api.post('/ai/event-ingest', data),
+  predictRisk: (data: any) => api.post('/ai/risk-prediction', data),
+  getHeatmap: () => api.post('/ai/heatmap')
 }

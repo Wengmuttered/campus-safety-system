@@ -26,7 +26,7 @@
 - **Spring Security** — JWT 无状态认证
 - **Spring Data JPA** — 数据持久化
 - **PostgreSQL** — 主数据库（+ PostGIS 空间数据）
-- **Redis** — 缓存 & 向量存储
+- **Redis** — 缓存 & 向量存储（可选，支持无 Redis 启动）
 - **WebSocket (STOMP)** — 实时消息推送
 - **Knife4j 4.5** — API 接口文档
 
@@ -42,7 +42,7 @@
 ### AI 服务
 
 - **Python** — FastAPI
-- **Scikit-learn / PyTorch** — 风险预测模型
+- **Scikit-learn** — 风险预测模型（RandomForest）
 - **Pandas / NumPy** — 数据分析
 
 ## 📁 项目结构
@@ -51,15 +51,18 @@
 高校应急安全管理系统/
 ├── campus-safety-backend/        # Spring Boot 后端
 │   ├── src/main/java/com/campussafety/
-│   │   ├── config/               # 配置类 (Security, CORS, WebSocket, Redis, Knife4j)
-│   │   ├── controller/           # REST 控制器
+│   │   ├── config/               # 配置类 (Security, CORS, WebSocket, Redis, DataInitializer)
+│   │   ├── controller/           # REST 控制器 (24个)
 │   │   ├── dto/                  # 数据传输对象
 │   │   ├── entity/               # JPA 实体类
 │   │   ├── repository/           # 数据访问层
 │   │   ├── service/              # 业务逻辑层
 │   │   └── util/                 # 工具类 (JWT, ApiResponse)
 │   └── src/main/resources/
-│       └── application.yml       # 应用配置
+│       ├── application.yml       # 主配置 (环境变量注入)
+│       ├── application-local.yml # 本地开发配置 (.gitignore)
+│       ├── application-demo.yml  # 比赛演示配置
+│       └── application-minimal.yml # 最小启动配置 (无Redis)
 │
 ├── campus-safety-frontend/       # Vue 3 前端
 │   └── src/
@@ -67,17 +70,16 @@
 │       ├── layouts/              # 页面布局
 │       ├── router/               # 路由配置
 │       ├── stores/               # Pinia 状态管理
-│       └── views/                # 页面组件
-│           ├── LoginView.vue     # 登录页
-│           ├── DashboardView.vue # 控制台
-│           ├── MapView.vue       # 3D 校园地图
-│           ├── AlertView.vue     # 一键求助
-│           ├── EventsView.vue    # 事件管理
-│           ├── EvacuationView.vue# 疏散导航
-│           ├── DrillView.vue     # 应急演练
-│           └── RiskView.vue      # 风险分析
+│       └── views/                # 页面组件 (22个)
 │
-└── ai-service/                   # Python AI 服务 (规划中)
+├── ai-service/                   # Python AI 服务
+│   ├── main.py                   # FastAPI 入口
+│   └── requirements.txt          # Python 依赖
+│
+├── docker-compose.yml            # Docker 一键部署
+├── start-all.bat                 # Windows 一键启动
+├── stop-all.bat                  # Windows 一键停止
+└── start-docker.bat              # Docker 一键启动脚本
 ```
 
 ## 🚀 快速启动
@@ -87,58 +89,113 @@
 - JDK 21+
 - Maven 3.9+
 - Node.js 20+
-- PostgreSQL 15+
-- Redis 7+
+- PostgreSQL 15+（必须）
+- Redis 7+（可选，minimal 模式可不装）
+- Python 3.11+（可选，AI 服务不启动时自动降级）
 
-### 1. 后端启动
+---
+
+### 方式一：Windows 一键启动（推荐本地开发）
 
 ```bash
-# 创建数据库
+# 1. 确保 PostgreSQL 和 Redis 已运行
+
+# 2. 创建数据库
 psql -U postgres -c "CREATE DATABASE campus_safety;"
 
-# 进入后端目录
-cd campus-safety-backend
-
-# 编译运行
-mvn spring-boot:run
+# 3. 双击运行
+start-all.bat
 ```
 
-启动后：
+脚本会自动检查环境 → 启动后端/AI/前端 → 等待就绪 → 打开浏览器。
 
-- 后端服务：http://localhost:8088
-- API 文档：http://localhost:8088/doc.html
+停止所有服务：
+```bash
+stop-all.bat
+```
 
-### 2. 前端启动
+---
+
+### 方式二：Docker Compose 一键部署（推荐演示）
 
 ```bash
-cd campus-safety-frontend
+# 一键启动（包含 PostgreSQL + Redis + 后端 + AI + 前端）
+docker-compose up -d --build
 
+# 或使用脚本
+start-docker.bat
+```
+
+启动后访问：
+- 前端：http://localhost
+- 后端 API：http://localhost:8088
+- API 文档：http://localhost:8088/doc.html
+
+停止并清理：
+```bash
+docker-compose down      # 停止服务
+docker-compose down -v   # 停止并清除数据
+```
+
+---
+
+### 方式三：手动分步启动
+
+```bash
+# 1. 后端
+cd campus-safety-backend
+mvn spring-boot:run
+
+# 2. AI 服务（可选）
+cd ai-service
+pip install -r requirements.txt
+python main.py
+
+# 3. 前端
+cd campus-safety-frontend
 npm install
 npm run dev
 ```
 
-启动后访问：http://localhost:5173
+---
 
-### 3. 演示账号
+### 三种 Spring Profile
+
+| Profile | 启动命令 | 依赖 | 适用场景 |
+|---------|---------|------|---------|
+| `local` | 默认 | PostgreSQL + Redis | 本地开发 |
+| `demo` | `--spring.profiles.active=demo` | PostgreSQL + Redis | 比赛演示（Docker） |
+| `minimal` | `--spring.profiles.active=minimal` | 仅 PostgreSQL | 应急兜底（无 Redis） |
+
+## 👤 演示账号
 
 | 角色     | 用户名     | 密码     |
 | -------- | ---------- | -------- |
 | 管理员   | admin      | admin123 |
 | 安保人员 | security01 | 123456   |
 | 学生     | student01  | 123456   |
+| 教师     | teacher01  | 123456   |
+
+> 首次启动时系统自动初始化演示数据（用户、建筑、点位、事件、演练、巡检等），无需手动导入。
 
 ## 📊 数据库设计
 
-系统包含 8 张核心数据表：
+系统包含 14 张核心数据表：
 
 - `users` — 用户信息（管理员/安保/教师/学生）
 - `campuses` — 校区信息
 - `buildings` — 建筑物（含坐标、楼层、容量）
 - `safety_points` — 安全点位（消防栓/AED/出口/监控等）
-- `emergency_events` — 应急事件
+- `emergency_events` — 应急事件（多状态流转）
 - `alert_records` — 报警记录
 - `evacuation_routes` — 疏散路线
 - `drill_plans` — 演练计划
+- `inspection_tasks` — 巡检任务
+- `hazard_reports` — 隐患报告
+- `emergency_supplies` — 应急物资
+- `duty_schedules` — 值班排班
+- `notices` — 通知公告
+- `training_courses` — 培训课程
 
 ## 📡 API 接口
 
@@ -153,7 +210,10 @@ npm run dev
 | 事件   | `/api/events`            | CRUD | 事件管理       |
 | 疏散   | `/api/evacuation/routes` | GET  | 疏散路线       |
 | 演练   | `/api/drills`            | CRUD | 演练管理       |
+| AI     | `/api/ai/risk-prediction`| POST | 风险预测       |
+| AI     | `/api/ai/heatmap`        | POST | 热力图         |
 | 仪表盘 | `/api/dashboard/stats`   | GET  | 统计数据       |
+| 统计   | `/api/statistics/overview`| GET | 综合统计       |
 
 > 完整 API 文档请启动后端后访问 http://localhost:8088/doc.html
 

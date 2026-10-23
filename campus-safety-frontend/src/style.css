@@ -57,7 +57,92 @@ body {
   --el-table-text-color: var(--text-primary) !important;
   --el-table-header-text-color: var(--text-secondary) !important;
   --el-table-border-color: var(--border-color) !important;
+  --el-table-expanded-cell-bg-color: var(--bg-card) !important;
 }
+
+/* 表格单元格垂直居中对齐（关键修复） */
+.el-table .el-table__cell {
+  vertical-align: middle !important;
+}
+.el-table .cell {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 23px;
+}
+.el-table__header .cell {
+  justify-content: flex-start;
+}
+/* 操作列按钮水平排列对齐 */
+.el-table .cell .el-button + .el-button,
+.el-table .cell .el-button + .el-dropdown,
+.el-table .cell .el-dropdown {
+  margin-left: 4px;
+}
+/* stripe 交替行背景（关键修复） */
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: rgba(30, 58, 95, 0.15) !important;
+}
+
+/* fixed 列背景修复 */
+.el-table__fixed-right,
+.el-table__fixed,
+.el-table__fixed-body-wrapper,
+.el-table td.el-table-fixed-column--right,
+.el-table td.el-table-fixed-column--left,
+.el-table th.el-table-fixed-column--right,
+.el-table th.el-table-fixed-column--left {
+  background: var(--bg-card) !important;
+}
+.el-table__fixed-right::before,
+.el-table__fixed::before {
+  background-color: var(--border-color) !important;
+}
+
+/* 对话框暗色 */
+.el-dialog {
+  --el-dialog-bg-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius) !important;
+}
+.el-dialog__title { color: var(--text-primary) !important; }
+.el-dialog__headerbtn .el-dialog__close { color: var(--text-secondary) !important; }
+
+/* 描述列表暗色 */
+.el-descriptions__label { background: rgba(30, 58, 95, 0.2) !important; color: var(--text-secondary) !important; }
+.el-descriptions__content { background: transparent !important; color: var(--text-primary) !important; }
+.el-descriptions__cell { border-color: var(--border-color) !important; }
+
+/* 下拉菜单暗色 */
+.el-dropdown-menu { background: var(--bg-card) !important; border-color: var(--border-color) !important; }
+.el-dropdown-menu__item { color: var(--text-primary) !important; }
+.el-dropdown-menu__item:hover { background: rgba(44, 82, 130, 0.3) !important; }
+
+/* 分页器暗色 */
+.el-pagination { --el-pagination-bg-color: transparent !important; --el-pagination-text-color: var(--text-secondary) !important; --el-pagination-button-disabled-bg-color: transparent !important; }
+.el-pagination .el-input__wrapper { background: var(--bg-card) !important; border-color: var(--border-color) !important; box-shadow: none !important; }
+.el-pagination .el-input__inner { color: var(--text-primary) !important; }
+.el-pagination button { background: transparent !important; color: var(--text-secondary) !important; }
+.el-pager li { background: transparent !important; color: var(--text-secondary) !important; }
+.el-pager li.is-active { color: #4299e1 !important; font-weight: bold; }
+
+/* Select 下拉暗色 */
+.el-select-dropdown { background: var(--bg-card) !important; border-color: var(--border-color) !important; }
+.el-select-dropdown__item { color: var(--text-primary) !important; }
+.el-select-dropdown__item.hover, .el-select-dropdown__item:hover { background: rgba(44, 82, 130, 0.3) !important; }
+.el-select-dropdown__item.selected { color: #4299e1 !important; }
+.el-select .el-input__wrapper { background: var(--bg-card) !important; box-shadow: 0 0 0 1px var(--border-color) !important; }
+.el-select .el-input__inner { color: var(--text-primary) !important; }
+
+/* Collapse 折叠面板暗色 */
+.el-collapse { --el-collapse-header-bg-color: transparent !important; --el-collapse-content-bg-color: transparent !important; border-color: var(--border-color) !important; }
+.el-collapse-item__header { color: var(--text-primary) !important; border-color: var(--border-color) !important; }
+.el-collapse-item__wrap { border-color: var(--border-color) !important; }
+
+/* Steps 暗色 */
+.el-step__title { color: var(--text-secondary) !important; }
+.el-step__title.is-process { color: var(--text-primary) !important; }
+.el-step__title.is-finish { color: #38a169 !important; }
+.el-step__description { color: var(--text-secondary) !important; }
 
 /* 滚动条美化 */
 ::-webkit-scrollbar {

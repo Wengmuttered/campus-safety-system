@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Vue + TS</title>
+    <script>
+      // Polyfill for global object required by sockjs-client in Vite
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

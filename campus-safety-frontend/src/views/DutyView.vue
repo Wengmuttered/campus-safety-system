@@ -14,7 +14,9 @@
           <template #header><span style="font-weight:600;color:var(--text-primary)">排班列表</span></template>
           <el-table :data="duties" stripe>
             <el-table-column prop="dutyDate" label="日期" width="110" />
-            <el-table-column prop="userId" label="值班人员" width="100" />
+            <el-table-column prop="userId" label="值班人员" width="100">
+              <template #default="{ row }">{{ userMap[row.userId] || `人员${row.userId}` }}</template>
+            </el-table-column>
             <el-table-column prop="shiftType" label="班次" width="80">
               <template #default="{ row }"><el-tag size="small" :type="shiftTag[row.shiftType]">{{ shiftMap[row.shiftType] }}</el-tag></template>
             </el-table-column>
@@ -39,7 +41,7 @@
           <div v-else class="today-list">
             <div v-for="d in todayDuties" :key="d.id" class="today-item">
               <div class="today-shift"><el-tag size="small" :type="shiftTag[d.shiftType]">{{ shiftMap[d.shiftType] }}</el-tag></div>
-              <div class="today-info"><span>人员ID: {{ d.userId }}</span><span class="today-area">{{ d.area || '—' }}</span></div>
+              <div class="today-info"><span>{{ userMap[d.userId] || `人员${d.userId}` }}</span><span class="today-area">{{ d.area || '—' }}</span></div>
               <el-tag size="small" :type="dutyStatusTag[d.status]">{{ dutyStatusMap[d.status] }}</el-tag>
             </div>
           </div>
@@ -48,7 +50,7 @@
     </el-row>
     <el-dialog v-model="showCreate" title="新建排班" width="480px">
       <el-form :model="form" label-width="80px">
-        <el-form-item label="人员ID"><el-input-number v-model="form.userId" :min="1" style="width:100%" /></el-form-item>
+        <el-form-item label="值班人员"><el-select v-model="form.userId" style="width:100%" placeholder="选择人员"><el-option v-for="(name, id) in userMap" :key="id" :label="name" :value="Number(id)" /></el-select></el-form-item>
         <el-form-item label="值班日期"><el-date-picker v-model="form.dutyDate" type="date" style="width:100%" /></el-form-item>
         <el-form-item label="班次"><el-select v-model="form.shiftType" style="width:100%"><el-option v-for="(v,k) in shiftMap" :key="k" :label="v" :value="k" /></el-select></el-form-item>
         <el-form-item label="值班区域"><el-input v-model="form.area" /></el-form-item>
@@ -62,14 +64,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { dutyApi } from '../api'
+import { dutyApi, userApi } from '../api'
 const duties = ref<any[]>([]); const todayDuties = ref<any[]>([]); const showCreate = ref(false)
 const dateRange = ref<any>([new Date(Date.now()-7*86400000), new Date(Date.now()+7*86400000)])
 const form = ref<any>({ userId:1, dutyDate:'', shiftType:'DAY', area:'', remark:'', campusId:1 })
 const shiftMap: Record<string,string> = { DAY:'白班', NIGHT:'夜班', FULL:'全天' }
-const shiftTag: Record<string,string> = { DAY:'', NIGHT:'warning', FULL:'danger' }
+const shiftTag: Record<string,string> = { DAY:'info', NIGHT:'warning', FULL:'danger' }
 const dutyStatusMap: Record<string,string> = { SCHEDULED:'已排班', ON_DUTY:'值班中', OFF_DUTY:'已下班', ABSENT:'缺勤' }
-const dutyStatusTag: Record<string,string> = { SCHEDULED:'info', ON_DUTY:'success', OFF_DUTY:'', ABSENT:'danger' }
+const dutyStatusTag: Record<string,string> = { SCHEDULED:'info', ON_DUTY:'success', OFF_DUTY:'info', ABSENT:'danger' }
+const userMap = ref<Record<string,string>>({})
 function fmt(d:Date){ return d.toISOString().split('T')[0] }
 async function loadData() {
   const [s,e] = dateRange.value||[]
@@ -81,7 +84,10 @@ function openCreate() { form.value = { userId:1, dutyDate:'', shiftType:'DAY', a
 async function handleCreate() { await dutyApi.create(form.value); ElMessage.success('排班已创建'); showCreate.value=false; loadData(); loadToday() }
 async function updateStatus(row:any, status:string) { await dutyApi.updateStatus(row.id, status); ElMessage.success('状态已更新'); loadData(); loadToday() }
 async function handleDelete(row:any) { await ElMessageBox.confirm('确认删除？','提示',{type:'warning'}); await dutyApi.delete(row.id); ElMessage.success('已删除'); loadData() }
-onMounted(()=>{ loadData(); loadToday() })
+async function loadUsers() {
+  try { const r: any = await userApi.getUsers(0, 100); const list = r.data?.content || r.data || []; list.forEach((u:any) => { userMap.value[u.id] = u.realName || u.username }) } catch {}
+}
+onMounted(()=>{ loadUsers(); loadData(); loadToday() })
 </script>
 
 <style scoped>

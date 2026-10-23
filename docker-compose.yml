@@ -1,0 +1,98 @@
+# ============================================================
+# 高校应急安全管理系统 — Docker Compose 一键部署
+# 用法：docker-compose up -d
+# ============================================================
+
+version: "3.8"
+
+services:
+  # ==================== 基础设施 ====================
+
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: campus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-campus_safety}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-campus2026}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== 后端 ====================
+
+  backend:
+    build:
+      context: ./campus-safety-backend
+      dockerfile: Dockerfile
+    container_name: campus-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-campus_safety}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-campus2026}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      AI_SERVICE_URL: http://ai-service:8089/api/ai
+      SERVER_PORT: 8088
+    ports:
+      - "${SERVER_PORT:-8088}:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ==================== AI 服务 ====================
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: campus-ai
+    restart: unless-stopped
+    ports:
+      - "${AI_SERVICE_PORT:-8089}:8089"
+
+  # ==================== 前端 ====================
+
+  frontend:
+    build:
+      context: ./campus-safety-frontend
+      dockerfile: Dockerfile
+    container_name: campus-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+    driver: local

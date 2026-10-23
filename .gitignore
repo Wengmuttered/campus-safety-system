@@ -38,6 +38,12 @@ desktop.ini
 .env.local
 .env.*.local
 
+# Local config (含密码，不提交)
+**/application-local.yml
+
 # Build
 build/
 out/
+
+# Docker
+pgdata/

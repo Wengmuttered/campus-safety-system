@@ -1,0 +1,33 @@
+# ============================================================
+# 比赛演示环境配置
+# 用于答辩现场演示，关闭调试日志，优化性能表现
+# 支持 Docker Compose 部署 (容器内服务名寻址)
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_safety}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:campus2026}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8089/api/ai}
+
+logging:
+  level:
+    com.campussafety: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
